@@ -1,4 +1,4 @@
-package com.task.client_card_app;
+package com.task.client.card.app;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

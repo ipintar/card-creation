@@ -1,4 +1,4 @@
-package com.task.client_card_app.kafka;
+package com.task.client.card.app.kafka;
 
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
