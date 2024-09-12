@@ -4,10 +4,22 @@ import com.task.client.card.app.entity.Client;
 import com.task.client.card.app.dto.ClientDTO;
 import com.task.client.card.app.dto.NewCardRequest;
 
-public class ClientMapper {
+/**
+ * Utility class for mapping between ClientDTO and Client entities.
+ */
+public final class ClientMapper {
 
-    public static Client toEntity(ClientDTO clientDTO) {
-        Client client = new Client();
+    private ClientMapper() {
+    }
+
+    /**
+     * Converts ClientDTO to Client entity.
+     *
+     * @param clientDTO the client DTO to convert
+     * @return the corresponding Client entity
+     */
+    public static Client toEntity(final ClientDTO clientDTO) {
+        final Client client = new Client();
         client.setIme(clientDTO.getIme());
         client.setPrezime(clientDTO.getPrezime());
         client.setOib(clientDTO.getOib());
@@ -15,8 +27,14 @@ public class ClientMapper {
         return client;
     }
 
-    public static NewCardRequest toNewCardRequest(Client client) {
-        NewCardRequest newCardRequest = new NewCardRequest();
+    /**
+     * Converts Client entity to NewCardRequest DTO.
+     *
+     * @param client the client entity to convert
+     * @return the corresponding NewCardRequest DTO
+     */
+    public static NewCardRequest toNewCardRequest(final Client client) {
+        final NewCardRequest newCardRequest = new NewCardRequest();
         newCardRequest.setFirstName(client.getIme());
         newCardRequest.setLastName(client.getPrezime());
         newCardRequest.setOib(client.getOib());
