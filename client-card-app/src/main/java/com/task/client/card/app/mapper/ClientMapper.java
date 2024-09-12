@@ -1,8 +1,8 @@
-package com.task.client_card_app.mapper;
+package com.task.client.card.app.mapper;
 
-import com.task.client_card_app.dto.ClientDTO;
-import com.task.client_card_app.dto.NewCardRequest;
-import com.task.client_card_app.entity.Client;
+import com.task.client.card.app.entity.Client;
+import com.task.client.card.app.dto.ClientDTO;
+import com.task.client.card.app.dto.NewCardRequest;
 
 public class ClientMapper {
 

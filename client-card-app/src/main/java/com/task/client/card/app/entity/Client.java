@@ -1,4 +1,4 @@
-package com.task.client_card_app.entity;
+package com.task.client.card.app.entity;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;

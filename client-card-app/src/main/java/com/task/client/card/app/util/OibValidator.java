@@ -1,4 +1,4 @@
-package com.task.client_card_app.util;
+package com.task.client.card.app.util;
 
 public class OibValidator {
 

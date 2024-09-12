@@ -1,4 +1,4 @@
-package com.task.client_card_app.dto;
+package com.task.client.card.app.dto;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
