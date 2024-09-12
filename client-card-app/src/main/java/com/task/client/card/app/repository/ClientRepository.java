@@ -1,4 +1,4 @@
-package com.task.client.card.app;
+package com.task.client.card.app.repository;
 
 import com.task.client.card.app.entity.Client;
 import org.springframework.data.jpa.repository.JpaRepository;

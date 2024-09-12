@@ -5,7 +5,7 @@ import com.task.client.card.app.entity.Client;
 import com.task.client.card.app.mapper.ClientMapper;
 import com.task.client.card.app.dto.ErrorResponse;
 import com.task.client.card.app.dto.Response;
-import com.task.client.card.app.ClientRepository;
+import com.task.client.card.app.repository.ClientRepository;
 import com.task.client.card.app.dto.ClientDTO;
 import com.task.client.card.app.dto.NewCardRequest;
 import jakarta.validation.Valid;
