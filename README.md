@@ -33,7 +33,7 @@ Zookeeper should now be running in the terminal.
 Open another terminal window and run the following command to start the Kafka broker:
 
 ```bash
-cd C:\KAFKA\kafka_2.12-3.8.0
+cd C:\kafka_2.12-3.8.0
 .\bin\windows\kafka-server-start.bat .\config\server.properties
 ```
 
