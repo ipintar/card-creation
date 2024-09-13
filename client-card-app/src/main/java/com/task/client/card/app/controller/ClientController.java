@@ -6,6 +6,7 @@ import com.task.client.card.app.dto.NewCardRequest;
 import com.task.client.card.app.dto.Response;
 import com.task.client.card.app.entity.Client;
 import com.task.client.card.app.exception.ExternalApiException;
+import com.task.client.card.app.kafka.KafkaService;
 import com.task.client.card.app.mapper.ClientMapper;
 import com.task.client.card.app.repository.ClientRepository;
 import jakarta.validation.Valid;
@@ -15,7 +16,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -37,8 +37,6 @@ public class ClientController {
 
     private static final Logger logger = LoggerFactory.getLogger(ClientController.class);
 
-    private static final String TOPIC = "card-status-topic";
-
     @Value("${api.url}")
     private String apiUrl;
 
@@ -49,7 +47,7 @@ public class ClientController {
     private RestTemplate restTemplate;
 
     @Autowired
-    private KafkaTemplate<String, String> kafkaTemplate;
+    private KafkaService kafkaService;
 
     /**
      * Creates a new client from the provided data.
@@ -131,7 +129,7 @@ public class ClientController {
             final ResponseEntity<Response> response = restTemplate.postForEntity(apiUrl, newCardRequest, Response.class);
             logger.info("Data successfully sent to API, status: {}", response.getStatusCode());
 
-            kafkaTemplate.send(TOPIC, "API response for OIB: " + oib + " -> "
+            kafkaService.sendAsync("API response for OIB: " + oib + " -> "
                     + response.getBody().getMessage()
                     + " @ " + LocalDateTime.now());
 
@@ -140,7 +138,7 @@ public class ClientController {
             final ErrorResponse errorResponse = e.getErrorResponse();
             logger.error("Error while sending data to API: {} -> {}", errorResponse.getCode(), errorResponse.getDescription());
 
-            kafkaTemplate.send(TOPIC, "Error while sending data to API for OIB: " + oib + " -> "
+            kafkaService.sendAsync("Error while sending data to API for OIB: " + oib + " -> "
                     + errorResponse.getDescription());
 
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error: " + errorResponse.getDescription());
