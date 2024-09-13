@@ -2,9 +2,12 @@ package com.task.client.card.app;
 
 import com.task.client.card.app.controller.ClientController;
 import com.task.client.card.app.dto.ClientDTO;
+import com.task.client.card.app.dto.ErrorResponse;
 import com.task.client.card.app.dto.NewCardRequest;
 import com.task.client.card.app.dto.Response;
 import com.task.client.card.app.entity.Client;
+import com.task.client.card.app.enums.CardStatus;
+import com.task.client.card.app.exception.ExternalApiException;
 import com.task.client.card.app.mapper.ClientMapper;
 import com.task.client.card.app.repository.ClientRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,6 +22,9 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.web.client.RestTemplate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class ClientControllerTest {
@@ -46,29 +52,29 @@ public class ClientControllerTest {
     @Test
     void createClientTest() {
         ClientDTO clientDTO = new ClientDTO();
-        clientDTO.setIme("Ana");
-        clientDTO.setPrezime("Anić");
+        clientDTO.setFirstName("Ana");
+        clientDTO.setLastName("Anić");
         clientDTO.setOib("12345678903");
-        clientDTO.setStatusKartice("Accepted");
+        clientDTO.setCardStatus(CardStatus.ACCEPTED);
 
-        Client client = ClientMapper.toEntity(clientDTO);
+        Client client = ClientMapper.toClientEntity(clientDTO);
 
         when(clientRepository.save(client)).thenReturn(client);
 
         ResponseEntity<String> response = clientController.createClient(clientDTO);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertEquals("Klijent uspješno kreiran", response.getBody());
+        assertEquals("Client successfully created", response.getBody());
     }
 
     @Test
     void getClientByOibTest() {
         String oib = "12345678903";
         Client client = new Client();
-        client.setIme("Ana");
-        client.setPrezime("Anić");
+        client.setFirstName("Ana");
+        client.setLastName("Anić");
         client.setOib(oib);
-        client.setStatusKartice("Accepted");
+        client.setCardStatus(CardStatus.ACCEPTED);
 
         when(clientRepository.findByOib(oib)).thenReturn(client);
 
@@ -93,10 +99,10 @@ public class ClientControllerTest {
     void deleteClientByOibTest() {
         String oib = "12345678903";
         Client client = new Client();
-        client.setIme("Ana");
-        client.setPrezime("Anić");
+        client.setFirstName("Ana");
+        client.setLastName("Anić");
         client.setOib(oib);
-        client.setStatusKartice("Accepted");
+        client.setCardStatus(CardStatus.ACCEPTED);
 
         when(clientRepository.findByOib(oib)).thenReturn(client);
 
@@ -120,12 +126,12 @@ public class ClientControllerTest {
     void sendClientToApiTest() {
         String oib = "12345678903";
         Client client = new Client();
-        client.setIme("Ana");
-        client.setPrezime("Anić");
+        client.setFirstName("Ana");
+        client.setLastName("Anić");
         client.setOib(oib);
-        client.setStatusKartice("Accepted");
+        client.setCardStatus(CardStatus.ACCEPTED);
 
-        NewCardRequest newCardRequest = ClientMapper.toNewCardRequest(client);
+        NewCardRequest newCardRequest = ClientMapper.toNewCardRequestDto(client);
         Response response = new Response();
         response.setMessage("New card request successfully created.");
 
@@ -136,8 +142,40 @@ public class ClientControllerTest {
         ResponseEntity<String> result = clientController.sendClientToApi(oib);
 
         assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertEquals("Podaci poslani na API, status: New card request successfully created.", result.getBody());
+        assertEquals("Data sent to API, status: New card request successfully created.", result.getBody());
+
+        verify(kafkaTemplate).send(eq("card-status-topic"), argThat(message ->
+                message.contains("API response for OIB: " + oib + " -> New card request successfully created.")
+        ));
     }
+
+    @Test
+    void sendClientToApiExternalApiErrorTest() {
+        String oib = "12345678903";
+        Client client = new Client();
+        client.setFirstName("Ana");
+        client.setLastName("Anić");
+        client.setOib(oib);
+        client.setCardStatus(CardStatus.ACCEPTED);
+
+        NewCardRequest newCardRequest = ClientMapper.toNewCardRequestDto(client);
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setCode("400");
+        errorResponse.setDescription("Invalid data");
+
+        when(clientRepository.findByOib(oib)).thenReturn(client);
+
+        ExternalApiException apiException = new ExternalApiException("API error", errorResponse);
+        when(restTemplate.postForEntity(apiUrl, newCardRequest, Response.class)).thenThrow(apiException);
+
+        ResponseEntity<String> result = clientController.sendClientToApi(oib);
+
+        assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
+        assertEquals("Error: Invalid data", result.getBody());
+
+        verify(kafkaTemplate).send("card-status-topic", "Error while sending data to API for OIB: " + oib + " -> " + errorResponse.getDescription());
+    }
+
 
     @Test
     void sendClientToApiClientNotFoundTest() {
@@ -148,7 +186,7 @@ public class ClientControllerTest {
         ResponseEntity<String> result = clientController.sendClientToApi(oib);
 
         assertEquals(HttpStatus.NOT_FOUND, result.getStatusCode());
-        assertEquals("Klijent nije pronađen", result.getBody());
+        assertEquals("Client not found", result.getBody());
     }
 
 }
