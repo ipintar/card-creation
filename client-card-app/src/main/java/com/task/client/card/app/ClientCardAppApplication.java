@@ -18,17 +18,16 @@ public class ClientCardAppApplication {
         SpringApplication.run(ClientCardAppApplication.class, args);
     }
 
-	   /**
-	 * Bean definition for {@link RestTemplate}, which is used for making HTTP requests
-	 * to external APIs. This method also sets a custom error handler to process
-	 * error responses from the external API.
-	 *
-	 * @return a configured instance of {@link RestTemplate} with {@link ExternalApiResponseErrorHandler}
-	 *
-	 * */
+    /**
+     * Bean definition for {@link RestTemplate}, which is used for making HTTP requests
+     * to external APIs. This method also sets a custom error handler to process
+     * error responses from the external API.
+     *
+     * @return a configured instance of {@link RestTemplate} with {@link ExternalApiResponseErrorHandler}
+     */
     @Bean
     public RestTemplate restTemplate() {
-		final RestTemplate restTemplate = new RestTemplate();
+        final RestTemplate restTemplate = new RestTemplate();
         restTemplate.setErrorHandler(new ExternalApiResponseErrorHandler());
         return restTemplate;
     }

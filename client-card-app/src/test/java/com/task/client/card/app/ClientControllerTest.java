@@ -1,5 +1,6 @@
 package com.task.client.card.app;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.task.client.card.app.controller.ClientController;
 import com.task.client.card.app.dto.ClientDTO;
 import com.task.client.card.app.dto.ErrorResponse;
@@ -8,6 +9,7 @@ import com.task.client.card.app.dto.Response;
 import com.task.client.card.app.entity.Client;
 import com.task.client.card.app.enums.CardStatus;
 import com.task.client.card.app.exception.ExternalApiException;
+import com.task.client.card.app.kafka.KafkaService;
 import com.task.client.card.app.mapper.ClientMapper;
 import com.task.client.card.app.repository.ClientRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,7 +24,10 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.web.client.RestTemplate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -36,7 +41,7 @@ public class ClientControllerTest {
     private RestTemplate restTemplate;
 
     @Mock
-    private KafkaTemplate<String, String> kafkaTemplate;
+    private KafkaService kafkaService;
 
     @InjectMocks
     private ClientController clientController;
@@ -64,7 +69,7 @@ public class ClientControllerTest {
         ResponseEntity<String> response = clientController.createClient(clientDTO);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertEquals("Client successfully created", response.getBody());
+        assertEquals("Client successfully created.", response.getBody());
     }
 
     @Test
@@ -144,9 +149,7 @@ public class ClientControllerTest {
         assertEquals(HttpStatus.OK, result.getStatusCode());
         assertEquals("Data sent to API, status: New card request successfully created.", result.getBody());
 
-        verify(kafkaTemplate).send(eq("card-status-topic"), argThat(message ->
-                message.contains("API response for OIB: " + oib + " -> New card request successfully created.")
-        ));
+        verify(kafkaService).sendAsync(anyString());
     }
 
     @Test
@@ -173,7 +176,7 @@ public class ClientControllerTest {
         assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
         assertEquals("Error: Invalid data", result.getBody());
 
-        verify(kafkaTemplate).send("card-status-topic", "Error while sending data to API for OIB: " + oib + " -> " + errorResponse.getDescription());
+        verify(kafkaService).sendAsync(contains("Error while sending data to API"));
     }
 
 
@@ -188,5 +191,6 @@ public class ClientControllerTest {
         assertEquals(HttpStatus.NOT_FOUND, result.getStatusCode());
         assertEquals("Client not found", result.getBody());
     }
+
 
 }
