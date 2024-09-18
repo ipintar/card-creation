@@ -6,6 +6,7 @@ Make sure to set the following environment variables before running the project:
 
 - `DB_USERNAME=sa`
 - `DB_PASSWORD=password`
+- `ENC_KEY=1234567890123456`
 
 These variables are required for the database connection. You can set them in your system's environment variables or in your IDE's run configuration.
 
@@ -66,8 +67,10 @@ To read messages from the card-status-topic, use the following command:
 ## 3. Running the Application
 
 ### Build the Project
+Make sure to set the following environment variables before building the project,
+use Maven to build the project:
 
-Use Maven to build the project:
+- `ENC_KEY=1234567890123456`
 
 ```bash
 mvn clean install
