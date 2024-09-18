@@ -105,7 +105,7 @@ public class ClientController {
 
         final Client client = clientRepository.findByOib(encryptionService.encrypt(oib));
         if (client != null) {
-            clientRepository.deleteByOib(oib);
+            clientRepository.deleteByOib(encryptionService.encrypt(oib));
             logger.info("Client with OIB {} successfully deleted", oib);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } else {

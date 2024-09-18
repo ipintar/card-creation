@@ -70,7 +70,7 @@ To read messages from the card-status-topic, use the following command:
 Make sure to set the following environment variables before building the project,
 use Maven to build the project:
 
-- `ENC_KEY=1234567890123456`
+- `ENC_KEY=W2$3b6z!Pq8k@9Zm%7NvB#4DxE&fG5H1`
 
 ```bash
 mvn clean install
