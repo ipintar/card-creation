@@ -9,6 +9,7 @@ import com.task.client.card.app.exception.ExternalApiException;
 import com.task.client.card.app.kafka.KafkaService;
 import com.task.client.card.app.mapper.ClientMapper;
 import com.task.client.card.app.repository.ClientRepository;
+import com.task.client.card.app.service.EncryptionService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,6 +50,9 @@ public class ClientController {
     @Autowired
     private KafkaService kafkaService;
 
+    @Autowired
+    private EncryptionService encryptionService;
+
     /**
      * Creates a new client from the provided data.
      *
@@ -75,10 +79,10 @@ public class ClientController {
      * @return Response entity containing the client if found, or 404 if not found.
      */
     @GetMapping("/{oib}")
-    public ResponseEntity<Client> getClientByOib(final @PathVariable String oib) {
+    public ResponseEntity<Client> getClientByOib(final @PathVariable String oib) throws Exception {
         logger.info("Received request to search client with OIB: {}", oib);
 
-        final Client client = clientRepository.findByOib(oib);
+        final Client client = clientRepository.findByOib(encryptionService.encrypt(oib));
         if (client != null) {
             logger.info("Client found: {}", client);
             return new ResponseEntity<>(client, HttpStatus.OK);
@@ -96,10 +100,10 @@ public class ClientController {
      */
     @Transactional
     @DeleteMapping("/{oib}")
-    public ResponseEntity<Void> deleteClientByOib(final @PathVariable String oib) {
+    public ResponseEntity<Void> deleteClientByOib(final @PathVariable String oib) throws Exception {
         logger.info("Received request to delete client with OIB: {}", oib);
 
-        final Client client = clientRepository.findByOib(oib);
+        final Client client = clientRepository.findByOib(encryptionService.encrypt(oib));
         if (client != null) {
             clientRepository.deleteByOib(oib);
             logger.info("Client with OIB {} successfully deleted", oib);
@@ -117,9 +121,9 @@ public class ClientController {
      * @return Response entity indicating the result of the operation.
      */
     @PostMapping("/send/{oib}")
-    public ResponseEntity<String> sendClientToApi(final @PathVariable String oib) {
+    public ResponseEntity<String> sendClientToApi(final @PathVariable String oib) throws Exception {
         logger.info("Received request to send client data with OIB {} to API", oib);
-        final Client client = clientRepository.findByOib(oib);
+        final Client client = clientRepository.findByOib(encryptionService.encrypt(oib));
         if (client == null) {
             logger.warn("Client with OIB {} not found", oib);
             return ResponseEntity.status(404).body("Client not found");

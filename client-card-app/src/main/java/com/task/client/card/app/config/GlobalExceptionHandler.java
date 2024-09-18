@@ -123,7 +123,7 @@ public class GlobalExceptionHandler {
         logger.error("Global exception handler caught an unexpected error: {} - Stacktrace: {}", ex.getMessage(), ex);
         final ErrorResponse errorResponse = new ErrorResponse();
         errorResponse.setCode(HttpStatus.INTERNAL_SERVER_ERROR.toString());
-        errorResponse.setDescription("Global handler: An unexpected error occurred.");
+        errorResponse.setDescription("Global handler: An unexpected error occurred. -> " + ex.getMessage());
 
         return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }

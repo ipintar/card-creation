@@ -1,6 +1,5 @@
 package com.task.client.card.app;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.task.client.card.app.controller.ClientController;
 import com.task.client.card.app.dto.ClientDTO;
 import com.task.client.card.app.dto.ErrorResponse;
@@ -12,6 +11,7 @@ import com.task.client.card.app.exception.ExternalApiException;
 import com.task.client.card.app.kafka.KafkaService;
 import com.task.client.card.app.mapper.ClientMapper;
 import com.task.client.card.app.repository.ClientRepository;
+import com.task.client.card.app.service.EncryptionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -20,15 +20,11 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.web.client.RestTemplate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.contains;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -43,6 +39,9 @@ public class ClientControllerTest {
     @Mock
     private KafkaService kafkaService;
 
+    @Mock
+    private EncryptionService encryptionService;
+
     @InjectMocks
     private ClientController clientController;
 
@@ -50,8 +49,11 @@ public class ClientControllerTest {
     private String apiUrl;
 
     @BeforeEach
-    void setUp() {
-        MockitoAnnotations.initMocks(this);
+    void setUp() throws Exception {
+        MockitoAnnotations.openMocks(this);
+
+        when(encryptionService.encrypt(anyString())).thenReturn("mockEncryptedValue");
+        when(encryptionService.decrypt(anyString())).thenReturn("mockDecryptedValue");
     }
 
     @Test
@@ -73,15 +75,18 @@ public class ClientControllerTest {
     }
 
     @Test
-    void getClientByOibTest() {
+    void getClientByOibTest() throws Exception {
         String oib = "12345678903";
+        String encryptedOib = "mockEncryptedValue";
+
         Client client = new Client();
         client.setFirstName("Ana");
         client.setLastName("Anić");
         client.setOib(oib);
         client.setCardStatus(CardStatus.ACCEPTED);
 
-        when(clientRepository.findByOib(oib)).thenReturn(client);
+        when(encryptionService.encrypt(oib)).thenReturn(encryptedOib);
+        when(clientRepository.findByOib(encryptedOib)).thenReturn(client);
 
         ResponseEntity<Client> response = clientController.getClientByOib(oib);
 
@@ -90,7 +95,7 @@ public class ClientControllerTest {
     }
 
     @Test
-    void getClientByOibNotFoundTest() {
+    void getClientByOibNotFoundTest() throws Exception {
         String oib = "12345678903";
 
         when(clientRepository.findByOib(oib)).thenReturn(null);
@@ -101,23 +106,26 @@ public class ClientControllerTest {
     }
 
     @Test
-    void deleteClientByOibTest() {
+    void deleteClientByOibTest() throws Exception {
         String oib = "12345678903";
+        String encryptedOib = "mockEncryptedValue";
+
         Client client = new Client();
         client.setFirstName("Ana");
         client.setLastName("Anić");
         client.setOib(oib);
         client.setCardStatus(CardStatus.ACCEPTED);
 
-        when(clientRepository.findByOib(oib)).thenReturn(client);
+        when(encryptionService.encrypt(oib)).thenReturn(encryptedOib);
+        when(clientRepository.findByOib(encryptedOib)).thenReturn(client);
 
-        ResponseEntity<Void> response = clientController.deleteClientByOib(oib);
+        ResponseEntity<Void> response = clientController.deleteClientByOib(encryptionService.encrypt(oib));
 
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
     }
 
     @Test
-    void deleteClientByOibNotFoundTest() {
+    void deleteClientByOibNotFoundTest() throws Exception {
         String oib = "12345678903";
 
         when(clientRepository.findByOib(oib)).thenReturn(null);
@@ -128,8 +136,10 @@ public class ClientControllerTest {
     }
 
     @Test
-    void sendClientToApiTest() {
+    void sendClientToApiTest() throws Exception {
         String oib = "12345678903";
+        String encryptedOib = "mockEncryptedValue";
+
         Client client = new Client();
         client.setFirstName("Ana");
         client.setLastName("Anić");
@@ -140,7 +150,8 @@ public class ClientControllerTest {
         Response response = new Response();
         response.setMessage("New card request successfully created.");
 
-        when(clientRepository.findByOib(oib)).thenReturn(client);
+        when(encryptionService.encrypt(oib)).thenReturn(encryptedOib);
+        when(clientRepository.findByOib(encryptedOib)).thenReturn(client);
         when(restTemplate.postForEntity(apiUrl, newCardRequest, Response.class))
                 .thenReturn(new ResponseEntity<>(response, HttpStatus.CREATED));
 
@@ -153,8 +164,10 @@ public class ClientControllerTest {
     }
 
     @Test
-    void sendClientToApiExternalApiErrorTest() {
+    void sendClientToApiExternalApiErrorTest() throws Exception {
         String oib = "12345678903";
+        String encryptedOib = "mockEncryptedValue";
+
         Client client = new Client();
         client.setFirstName("Ana");
         client.setLastName("Anić");
@@ -166,7 +179,8 @@ public class ClientControllerTest {
         errorResponse.setCode("400");
         errorResponse.setDescription("Invalid data");
 
-        when(clientRepository.findByOib(oib)).thenReturn(client);
+        when(encryptionService.encrypt(oib)).thenReturn(encryptedOib);
+        when(clientRepository.findByOib(encryptedOib)).thenReturn(client);
 
         ExternalApiException apiException = new ExternalApiException("API error", errorResponse);
         when(restTemplate.postForEntity(apiUrl, newCardRequest, Response.class)).thenThrow(apiException);
@@ -181,7 +195,7 @@ public class ClientControllerTest {
 
 
     @Test
-    void sendClientToApiClientNotFoundTest() {
+    void sendClientToApiClientNotFoundTest() throws Exception {
         String oib = "12345678903";
 
         when(clientRepository.findByOib(oib)).thenReturn(null);
